@@ -1719,6 +1719,22 @@ public abstract class BaseDataSource implements CommonDataSource, Referenceable 
     PGProperty.XML_FACTORY_FACTORY.set(properties, xmlFactoryFactory);
   }
 
+  /**
+   * @return maximum PBKDF2 iteration count accepted during SCRAM authentication
+   * @see PGProperty#SCRAM_MAX_ITERATIONS
+   */
+  public int getScramMaxIterations() {
+    return PGProperty.SCRAM_MAX_ITERATIONS.getIntNoCheck(properties);
+  }
+
+  /**
+   * @param scramMaxIterations maximum PBKDF2 iteration count accepted during SCRAM authentication
+   * @see PGProperty#SCRAM_MAX_ITERATIONS
+   */
+  public void setScramMaxIterations(int scramMaxIterations) {
+    PGProperty.SCRAM_MAX_ITERATIONS.set(properties, scramMaxIterations);
+  }
+
   /*
    * Alias methods below, these are to help with ease-of-use with other database tools / frameworks
    * which expect normal java bean getters / setters to exist for the property names.
