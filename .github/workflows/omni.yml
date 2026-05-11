@@ -7,51 +7,48 @@ on:
       matrix_jdk_distribution:
         description: JDK Distribution (adopt, zulu, ...)
         required: false
-        default: "*"
+        default: '*'
       matrix_jdk_version:
         description: JDK Version (8, 11, ...)
         required: false
-        default: "*"
+        default: '*'
       matrix_pg_version:
         description: PostgreSQL Server Version (8.4, 9.0, 9.1, ...)
         required: false
-        default: "*"
+        default: '*'
       matrix_query_mode:
         description: Query Mode (simple | extended | extendedForPrepared)
         required: false
-        default: "*"
+        default: '*'
       matrix_ssl:
         description: SSL (true | false)
         required: false
-        default: "*"
+        default: '*'
       matrix_scram:
         description: SCRAM (true | false)
         required: false
-        default: "*"
+        default: '*'
       matrix_default_test_group:
         description: Default test group (fast | slow | all)
         required: false
         default: fast
-  schedule:
-    - cron: "0 6 * * *"
-
 permissions:
   contents: read
 
 jobs:
   matrix_prep:
     name: Matrix Preparation
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     outputs:
       matrix: ${{ steps.set-matrix.outputs.matrix }}
     env:
-      MATRIX_JDK_DISTRIBUTION: '${{ github.event.inputs.matrix_jdk_distribution }}'
-      MATRIX_JDK_VERSION: '${{ github.event.inputs.matrix_jdk_version }}'
-      MATRIX_PG_VERSION: '${{ github.event.inputs.matrix_pg_version }}'
-      MATRIX_QUERY_MODE: '${{ github.event.inputs.matrix_query_mode }}'
-      MATRIX_SCRAM: '${{ github.event.inputs.matrix_scram }}'
-      MATRIX_SSL: '${{ github.event.inputs.matrix_ssl }}'
-      MATRIX_DEFAULT_TEST_GROUP: '${{ github.event.inputs.matrix_default_test_group }}'
+      MATRIX_JDK_DISTRIBUTION: ${{ github.event.inputs.matrix_jdk_distribution }}
+      MATRIX_JDK_VERSION: ${{ github.event.inputs.matrix_jdk_version }}
+      MATRIX_PG_VERSION: ${{ github.event.inputs.matrix_pg_version }}
+      MATRIX_QUERY_MODE: ${{ github.event.inputs.matrix_query_mode }}
+      MATRIX_SCRAM: ${{ github.event.inputs.matrix_scram }}
+      MATRIX_SSL: ${{ github.event.inputs.matrix_ssl }}
+      MATRIX_DEFAULT_TEST_GROUP: ${{ github.event.inputs.matrix_default_test_group }}
       # Script as an environment variable so we don't have to worry shell substitutions
       MATRIX_GENERATION_NODE_JS_SCRIPT: |
         let fs = require('fs');
@@ -114,7 +111,7 @@ jobs:
 
         const addItem = (opts) => {
             const name = opts.name ?? '';
-            const os = 'ubuntu-latest';
+            const os = 'ubuntu-22.04';
             const pg_version = opts.pg_version ?? LATEST_PG_VERSION;
             const jdk = opts.jdk ?? LATEST_JDK;
             const experimental = opts.experimental ?? false;
@@ -269,12 +266,12 @@ jobs:
             });
         }
     steps:
-    - id: set-matrix
-      run: |
-        node -e "${MATRIX_GENERATION_NODE_JS_SCRIPT}"
+      - id: set-matrix
+        run: |
+          node -e "${MATRIX_GENERATION_NODE_JS_SCRIPT}"
 
   test:
-    name: '${{ matrix.name }}'
+    name: ${{ matrix.name }}
     runs-on: ${{ matrix.os }}
     continue-on-error: ${{ matrix.experimental }}
     needs: matrix_prep
@@ -289,132 +286,132 @@ jobs:
       TZ: ${{ matrix.server_tz }}
       CREATE_REPLICAS: ${{ matrix.create_replicas }}
     steps:
-    - name: 'Show Matrix'
-      env:
+      - name: Show Matrix
+        env:
           MATRIX_JSON: ${{ toJSON(matrix) }}
-      run: echo "${MATRIX_JSON}"
-    - uses: actions/checkout@v3
-      with:
-        fetch-depth: 50
+        run: echo "${MATRIX_JSON}"
+      - uses: actions/checkout@v3
+        with:
+          fetch-depth: 50
 
-    - name: Start PostgreSQL
-      working-directory: docker/postgres-server
-      run: docker-compose up -d && docker-compose logs
-      env:
-        PGV: ${{ matrix.pg_version }}
+      - name: Start PostgreSQL
+        working-directory: docker/postgres-server
+        run: docker-compose up -d && docker-compose logs
+        env:
+          PGV: ${{ matrix.pg_version }}
 
     # Install built-in JDK
-    - name: 'Set up JDK ${{ matrix.jdk_version }} / ${{ matrix.jdk_distribution }}'
-      uses: actions/setup-java@v3
-      if: ${{ matrix.jdk_distribution != 'jdkfile' }}
-      with:
-        distribution: ${{ matrix.jdk_distribution }}
-        java-version: ${{ matrix.jdk_version }}
-        architecture: x64
+      - name: Set up JDK ${{ matrix.jdk_version }} / ${{ matrix.jdk_distribution }}
+        uses: actions/setup-java@v3
+        if: ${{ matrix.jdk_distribution != 'jdkfile' }}
+        with:
+          distribution: ${{ matrix.jdk_distribution }}
+          java-version: ${{ matrix.jdk_version }}
+          architecture: x64
     # Install custom JDK from URL
-    - name: 'Download JDK ${{ matrix.jdk_distribution }} / ${{ matrix.jdk_version }} from ${{ matrix.jdk_url }}'
-      if: ${{ matrix.jdk_distribution == 'jdkfile' }}
-      run: |
-        jdk_url="${{ matrix.jdk_url }}"
-        wget -nv -O "${{ runner.temp }}/java_package.tar.gz" "${jdk_url}"
-    - name: 'Set up JDK ${{ matrix.jdk_version }} / ${{ matrix.jdk_url }}'
-      uses: actions/setup-java@v3
-      if: ${{ matrix.jdk_distribution == 'jdkfile' }}
-      with:
-        distribution: ${{ matrix.jdk_distribution }}
-        java-version: ${{ matrix.jdk_version }}
-        jdkFile: '${{ runner.temp }}/java_package.tar.gz'
-        architecture: x64
+      - name: Download JDK ${{ matrix.jdk_distribution }} / ${{ matrix.jdk_version }} from ${{ matrix.jdk_url }}
+        if: ${{ matrix.jdk_distribution == 'jdkfile' }}
+        run: |
+          jdk_url="${{ matrix.jdk_url }}"
+          wget -nv -O "${{ runner.temp }}/java_package.tar.gz" "${jdk_url}"
+      - name: Set up JDK ${{ matrix.jdk_version }} / ${{ matrix.jdk_url }}
+        uses: actions/setup-java@v3
+        if: ${{ matrix.jdk_distribution == 'jdkfile' }}
+        with:
+          distribution: ${{ matrix.jdk_distribution }}
+          java-version: ${{ matrix.jdk_version }}
+          jdkFile: ${{ runner.temp }}/java_package.tar.gz
+          architecture: x64
 
-    - name: Java version
-      run: |
-        java -version
+      - name: Java version
+        run: |
+          java -version
 
-    - name: PostgreSQL version
-      env:
-        PGUSER: postgres
-        PGDATABASE: postgres
-        PGHOST: localhost
-      run: |
-        if ! docker/bin/wait_for_pg_isready; then
-            # Server is not online so dump some logs for debugging
-            docker ps
-            cd docker/postgres-server
-            docker-compose logs
-        fi
-        psql -c 'SELECT version()'
+      - name: PostgreSQL version
+        env:
+          PGUSER: postgres
+          PGDATABASE: postgres
+          PGHOST: localhost
+        run: |
+          if ! docker/bin/wait_for_pg_isready; then
+              # Server is not online so dump some logs for debugging
+              docker ps
+              cd docker/postgres-server
+              docker-compose logs
+          fi
+          psql -c 'SELECT version()'
 
-    - name: Prepare local properties
-      run: |
-        cat <<EOF >ssltest.local.properties
-        enable_ssl_tests=${{ matrix.ssl }}
-        EOF
-        cat <<EOF >build.local.properties
-        preferQueryMode=${{ matrix.query_mode}}
-        EOF
-    - name: Test
-      uses: burrunan/gradle-cache-action@v1
-      env:
-        S3_BUILD_CACHE_ACCESS_KEY_ID: ${{ secrets.S3_BUILD_CACHE_ACCESS_KEY_ID }}
-        S3_BUILD_CACHE_SECRET_KEY: ${{ secrets.S3_BUILD_CACHE_SECRET_KEY }}
-      with:
+      - name: Prepare local properties
+        run: |
+          cat <<EOF >ssltest.local.properties
+          enable_ssl_tests=${{ matrix.ssl }}
+          EOF
+          cat <<EOF >build.local.properties
+          preferQueryMode=${{ matrix.query_mode}}
+          EOF
+      - name: Test
+        uses: burrunan/gradle-cache-action@v1
+        env:
+          S3_BUILD_CACHE_ACCESS_KEY_ID: ${{ secrets.S3_BUILD_CACHE_ACCESS_KEY_ID }}
+          S3_BUILD_CACHE_SECRET_KEY: ${{ secrets.S3_BUILD_CACHE_SECRET_KEY }}
+        with:
         # Separate cache for each JDK distribution and version
-        job-id: jdk${{ matrix.jdk_version}}_${{ matrix.jdk_group }}
-        arguments: --no-parallel --no-daemon --scan jandex test jacocoReport
-        properties: |
-          includeTestTags=${{ matrix.junit_include_tags }}
-    - name: 'Upload code coverage'
-      uses: codecov/codecov-action@a1ed4b322b4b38cb846afb5a0ebfa17086917d27
-      with:
-        file: ./build/reports/jacoco/jacocoReport/jacocoReport.xml
+          job-id: jdk${{ matrix.jdk_version}}_${{ matrix.jdk_group }}
+          arguments: --no-parallel --no-daemon --scan jandex test jacocoReport
+          properties: |
+            includeTestTags=${{ matrix.junit_include_tags }}
+      - name: Upload code coverage
+        uses: codecov/codecov-action@a1ed4b322b4b38cb846afb5a0ebfa17086917d27
+        with:
+          file: ./build/reports/jacoco/jacocoReport/jacocoReport.xml
 
   test-pg-head:
     name: Zulu 11 x PG HEAD
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     continue-on-error: true
     steps:
-    - uses: actions/checkout@v3
-      with:
-        fetch-depth: 50
-    - name: Compile and start PostgreSQL
-      working-directory: docker/postgres-head
-      run: docker-compose up -d && docker-compose logs
-    - name: Set up JDK
-      uses: actions/setup-java@v3
-      with:
-        distribution: zulu
-        java-version: 11
-        architecture: x64
-    - name: Java version
-      run: |
-        java -version
-    - name: PostgreSQL version
-      env:
-        PGUSER: postgres
-        PGDATABASE: postgres
-        PGHOST: localhost
-      run: |
-        if ! docker/bin/wait_for_pg_isready; then
-            # Server is not online so dump some logs for debugging
-            docker ps
-            cd docker/postgres-head
-            docker-compose logs
-        fi
-        psql -c 'SELECT version()'
-    - name: Prepare local properties
-      run: |
-        cat <<EOF >ssltest.local.properties
-        enable_ssl_tests=false
-        EOF
-        cat <<EOF >build.local.properties
-        EOF
-    - name: Test
-      uses: burrunan/gradle-cache-action@v1
-      with:
-        arguments: --no-parallel --no-daemon --scan jandex test jacocoReport -PskipJavadoc
-        properties: |
-          includeTestTags=!org.postgresql.test.SlowTests & !org.postgresql.test.Replication
-    - name: 'Upload code coverage'
-      uses: codecov/codecov-action@a1ed4b322b4b38cb846afb5a0ebfa17086917d27
-      with:
-        file: ./build/reports/jacoco/jacocoReport/jacocoReport.xml
+      - uses: actions/checkout@v3
+        with:
+          fetch-depth: 50
+      - name: Compile and start PostgreSQL
+        working-directory: docker/postgres-head
+        run: docker-compose up -d && docker-compose logs
+      - name: Set up JDK
+        uses: actions/setup-java@v3
+        with:
+          distribution: zulu
+          java-version: 11
+          architecture: x64
+      - name: Java version
+        run: |
+          java -version
+      - name: PostgreSQL version
+        env:
+          PGUSER: postgres
+          PGDATABASE: postgres
+          PGHOST: localhost
+        run: |
+          if ! docker/bin/wait_for_pg_isready; then
+              # Server is not online so dump some logs for debugging
+              docker ps
+              cd docker/postgres-head
+              docker-compose logs
+          fi
+          psql -c 'SELECT version()'
+      - name: Prepare local properties
+        run: |
+          cat <<EOF >ssltest.local.properties
+          enable_ssl_tests=false
+          EOF
+          cat <<EOF >build.local.properties
+          EOF
+      - name: Test
+        uses: burrunan/gradle-cache-action@v1
+        with:
+          arguments: --no-parallel --no-daemon --scan jandex test jacocoReport -PskipJavadoc
+          properties: |
+            includeTestTags=!org.postgresql.test.SlowTests & !org.postgresql.test.Replication
+      - name: Upload code coverage
+        uses: codecov/codecov-action@a1ed4b322b4b38cb846afb5a0ebfa17086917d27
+        with:
+          file: ./build/reports/jacoco/jacocoReport/jacocoReport.xml
